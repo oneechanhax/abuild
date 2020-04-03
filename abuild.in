@@ -1,4 +1,4 @@
-#!/bin/ash -e
+#!/bin/sh -e
 
 # abuild - build apk packages (light version of makepkg)
 # Copyright (c) 2008-2015 Natanael Copa <ncopa@alpinelinux.org>
@@ -33,7 +33,7 @@ apk_opt_wait="--wait 30"
 umask 022
 
 shell_escape() {
-	echo \'${1/\'/\'\\\'\'}\'
+	echo \'$(echo "$1" | sed s/\'/\'\\\'\'/)\'
 }
 
 # run optional log command for remote logging
@@ -190,12 +190,12 @@ default_sanitycheck() {
 	is_function package || die "Missing package() function in APKBUILD"
 
 	if [ -n "$replaces_priority" ] \
-		&& ! echo $replaces_priority | egrep -q '^[0-9]+$'; then
+		&& ! echo $replaces_priority | grep -Eq '^[0-9]+$'; then
 		die "replaces_priority must be a number"
 	fi
 
 	if [ -n "$provider_priority" ] \
-		&& ! echo $provider_priority | egrep -q '^[0-9]+$'; then
+		&& ! echo $provider_priority | grep -Eq '^[0-9]+$'; then
 		die "provider_priority must be a number"
 	fi
 
@@ -322,7 +322,7 @@ sumcheck() {
 	fetch || return 1
 	msg "Checking ${algo}sums..."
 	cd "$srcdir" || return 1
-	IFS=$'\n'
+	IFS=$(printf '\n')
 	endreturnval=0
 	for src in $sums; do
 		origin=$1; shift
@@ -330,7 +330,7 @@ sumcheck() {
 			endreturnval=1
 			is_remote $origin || continue
 
-			local csum="${src:0:8}"
+			local csum="$(echo "$src" | cut -c1-8)"
 			local file="$SRCDEST/$(filename_from_uri $origin)"
 
 			echo "Because the remote file above failed the ${algo}sum check it will be renamed."
@@ -581,7 +581,7 @@ cleanpkg() {
 	rm -f "$REPODEST/$repo/src/$pkgname-$pkgver-r$pkgrel.src.tar.gz"
 	for i in $allpackages; do
 		subpkg_set "$i"
-		rm -f "$REPODEST/$repo/${subpkgarch/noarch/$CARCH}/$subpkgname-$pkgver-r$pkgrel.apk"
+		rm -f "$REPODEST/$repo/$(echo "$subpkgarch" | sed s/noarch/$CARCH/)/$subpkgname-$pkgver-r$pkgrel.apk"
 	done
 	subpkg_unset
 
@@ -940,7 +940,7 @@ check_license() {
 }
 
 check_secfixes_comment() {
-	local c=$(sed -E -n -e '/^# secfixes:/,/(^[^#]|^$)/p' $APKBUILD | grep '^#')
+	local c="$(sed -E -n -e '/^# secfixes:/,/(^[^#]|^$)/p' $APKBUILD | grep '^#')"
 	local invalid=$(echo "$c" \
 		| grep -v -E '(^# secfixes:|^#  +- [A-Z0-9-]+|^#   [0-9]+.*:$|^#$)')
 	if [ -z "$invalid" ]; then
@@ -948,9 +948,9 @@ check_secfixes_comment() {
 	fi
 
 	# check if there are tabs
-	if echo "$invalid" | grep -q $'\t'; then
+	if echo "$invalid" | grep -q $(printf '\t'); then
 		error "secfixes comment must not have tabs:"
-		echo "$c" | grep $'\t' >&2
+		echo "$c" | grep $(printf '\t') >&2
 		return 1
 	fi
 
@@ -1076,7 +1076,7 @@ prepare_metafiles() {
 		local f=${i%=*}
 		local dirs=${i#*=}
 		[ "${f%.trigger}" != "$name" ] && continue
-		echo "triggers = ${dirs//:/ }" >> "$pkginfo"
+		echo "triggers = $(echo "$dirs" | sed "s/\/:/ /")" >> "$pkginfo"
 	done
 	if [ -n "$install_if" ]; then
 		echo "install_if = $(echo $install_if)" >> "$pkginfo"
@@ -1494,7 +1494,7 @@ scan_shared_objects() {
 # path (2nd arg).
 normalize_target_path() {
 	local path=$1
-	[ "${path:0:1}" = / ] || path=$(dirname "$2")/$path
+	[ "$(echo "$path" | cut -c1)" = / ] || path=$(dirname "$2")/$path
 
 	local oifs="$IFS" pathstr= i=
 	IFS='/'
@@ -1634,8 +1634,8 @@ create_apks() {
 		abuild-sign -q control.tar.gz || exit 1
 
 		msg "Create $apk"
-		mkdir -p "$REPODEST"/$repo/${subpkgarch/noarch/$CARCH}
-		cat control.tar.gz data.tar.gz > "$REPODEST"/$repo/${subpkgarch/noarch/$CARCH}/$apk
+		mkdir -p "$REPODEST"/$repo/$(echo "$subpkgarch" | sed s/noarch/$CARCH/)
+		cat control.tar.gz data.tar.gz > "$REPODEST"/$repo/$(echo "$subpkgarch" | sed s/noarch/$CARCH/)/$apk
 		)
 	done
 }
@@ -1677,7 +1677,7 @@ update_abuildrepo_index() {
 		##NOARCH: These packages are really in $CARCH and do not need their
 		# own repository. --rewrite-arch is used below to make sure the index
 		# thinks they are for $CARCH and apk-tools will fetch them from
-		# correct URL path. Remainder of the script uses ${subpkgarch/noarch/$CARCH}
+		# correct URL path. Remainder of the script uses $(echo "$subpkgarch" | sed s/noarch/$CARCH/)
 		# when expanding to the target repository path.
 		[ "$subpkgarch" = "noarch" ] && subpkgarch="$CARCH"
 		list_has "$subpkgarch" "$allarch" || allarch="$allarch $subpkgarch"
@@ -1955,7 +1955,7 @@ fishcomp() {
 }
 
 is_function() {
-	type "$1" 2>&1 | head -n 1 | egrep -q "is a (shell )?function"
+	type "$1" 2>&1 | head -n 1 | grep -E "is a (shell )?function"
 }
 
 do_fakeroot() {
@@ -2045,7 +2045,7 @@ apk_up2date() {
 	local i s
 	for i in $allpackages; do
 		subpkg_set "$i"
-		if [ ! -f "$REPODEST/$repo/${subpkgarch/noarch/$CARCH}/$subpkgname-$pkgver-r$pkgrel.apk" ]; then
+		if [ ! -f "$REPODEST/$repo/$(echo "$subpkgarch" | sed s/noarch/$CARCH/)/$subpkgname-$pkgver-r$pkgrel.apk" ]; then
 			subpkg_unset
 			return 1
 		fi
@@ -2060,7 +2060,7 @@ apk_up2date() {
 		else
 			s="$startdir/${i##*/}"
 		fi
-		if [ "$s" -nt "$REPODEST/$repo/${pkgarch/noarch/$CARCH}/$pkgname-$pkgver-r$pkgrel.apk" ]; then
+		if [ "$s" -nt "$REPODEST/$repo/$(echo "$pkgarch" | sed s/noarch/$CARCH/)/$pkgname-$pkgver-r$pkgrel.apk" ]; then
 			return 1
 		fi
 	done
@@ -2073,7 +2073,7 @@ abuildindex_up2date() {
 
 	for i in $allpackages; do
 		subpkg_set "$i"
-		local dir="$REPODEST"/$repo/${subpkgarch/noarch/$CARCH}
+		local dir="$REPODEST"/$repo/$(echo "$subpkgarch" | sed s/noarch/$CARCH/)
 		local idx="$dir"/APKINDEX.tar.gz
 		local file="$dir"/$subpkgname-$pkgver-r$pkgrel.apk
 
@@ -2277,7 +2277,7 @@ rootbld() {
 	local version="edge" buildhost="edge" gitref
 	if gitref="$(expr "$(git symbolic-ref --short HEAD)" : '\([0-9]\+\(\.[0-9]\+\)*\)-')"; then
 		version=v${gitref}
-		buildhost=${gitref/./-}
+		buildhost=$(echo "$gitref" | sed s/./-/)
 	fi
 
 	[ -s "$repo_template" ] || die "rootbld: $repo_template does not exist"
