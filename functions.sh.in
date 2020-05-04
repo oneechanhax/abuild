@@ -5,20 +5,20 @@ program=${0##*/}
 
 arch_to_hostspec() {
 	case "$1" in
-	aarch64)	echo "aarch64-alpine-linux-musl" ;;
-	armel)		echo "armv5-alpine-linux-musleabi" ;;
-	armhf)		echo "armv6-alpine-linux-musleabihf" ;;
-	armv7)		echo "armv7-alpine-linux-musleabihf" ;;
-	mips)           echo "mips-alpine-linux-musl" ;;
-	mips64)         echo "mips64-alpine-linux-musl" ;;
-	mipsel)         echo "mipsel-alpine-linux-musl" ;;
-	mips64el)       echo "mips64el-alpine-linux-musl" ;;
-	ppc)		echo "powerpc-alpine-linux-musl" ;;
-	ppc64)		echo "powerpc64-alpine-linux-musl" ;;
-	ppc64le)	echo "powerpc64le-alpine-linux-musl" ;;
-	s390x)		echo "s390x-alpine-linux-musl" ;;
-	x86)		echo "i586-alpine-linux-musl" ;;
-	x86_64)		echo "x86_64-alpine-linux-musl" ;;
+	aarch64)	echo "aarch64-azaezel-linux-musl" ;;
+	armel)		echo "armv5-azaezel-linux-musleabi" ;;
+	armhf)		echo "armv6-azaezel-linux-musleabihf" ;;
+	armv7)		echo "armv7-azaezel-linux-musleabihf" ;;
+	mips)           echo "mips-azaezel-linux-musl" ;;
+	mips64)         echo "mips64-azaezel-linux-musl" ;;
+	mipsel)         echo "mipsel-azaezel-linux-musl" ;;
+	mips64el)       echo "mips64el-azaezel-linux-musl" ;;
+	ppc)		echo "powerpc-azaezel-linux-musl" ;;
+	ppc64)		echo "powerpc64-azaezel-linux-musl" ;;
+	ppc64le)	echo "powerpc64le-azaezel-linux-musl" ;;
+	s390x)		echo "s390x-azaezel-linux-musl" ;;
+	x86)		echo "i586-azaezel-linux-musl" ;;
+	x86_64)		echo "x86_64-azaezel-linux-musl" ;;
 	*)		echo "unknown" ;;
 	esac
 }

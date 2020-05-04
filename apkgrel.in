@@ -130,7 +130,7 @@ fi
 args=$(for a; do p=$(any_buildscript "$a") || die "can't find APKBUILD for $a"; echo "$p"; done)
 [ $? -eq 0 ] || exit 1
 oldifs=$IFS
-IFS=$'\n'
+IFS=$(printf '\n')
 set -- $args
 IFS=$oldifs
 

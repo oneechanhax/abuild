@@ -1555,9 +1555,10 @@ scan_pkgconfig_depends() {
 # read size in bytes from stdin and show as human readable
 human_size() {
 	awk '{  split("B KB MB GB TB PB", type)
-		for(i=5; y < 1 && $1 > 0; i--)
-			y = $1 / (2^(10*i))
-		printf("%.1f %s\n", y, type[i+2]) }'
+		y = $1
+		for(i = 1; y > 1024 && i < 5; i++)
+			y = $1 / (2 ^ (10 * i))
+		printf("%.2f%s\n", y, type[i]) }'
 }
 
 create_apks() {
@@ -1955,7 +1956,7 @@ fishcomp() {
 }
 
 is_function() {
-	type "$1" 2>&1 | head -n 1 | grep -E "is a (shell )?function"
+	type "$1" 2>&1 | head -n 1 | grep -Eq "is a (shell )?function"
 }
 
 do_fakeroot() {
@@ -2297,7 +2298,7 @@ rootbld() {
 
 	calcdeps
 	$SUDO_APK add --initdb --root "$BUILD_ROOT" --update \
-		abuild alpine-base build-base git $hostdeps $builddeps \
+		abuild azaezel-base build-base git sbase ubase $hostdeps $builddeps \
 		${USE_CCACHE:+ccache}
 
 	local bwrap_opts=""
@@ -2696,7 +2697,8 @@ controldir="$pkgbasedir"/.control.${subpkgname:-$pkgname}
 
 trap 'die "Aborted by user"' INT
 
-[ -z "$subpkgdir" ] && set_xterm_title "abuild${CROSS_COMPILE+-$CARCH}: $pkgname"
+# Potentially broken on non-busybox systems
+#[ -z "$subpkgdir" ] && set_xterm_title "abuild${CROSS_COMPILE+-$CARCH}: $pkgname"
 
 if [ -z "$1" ]; then
 	set all
