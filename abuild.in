@@ -21,12 +21,12 @@ fi
 
 # defaults
 : ${FAKEROOT:="fakeroot"}
-: ${SUDO_APK:="abuild-apk"}
+: ${SUDO_APK:="apk"}
 : ${APK:="apk"}
 : ${ADDUSER:="abuild-adduser"}
 : ${ADDGROUP:="abuild-addgroup"}
-: ${CC:="gcc"}
-: ${CXX:="g++"}
+: ${CC:="clang"}
+: ${CXX:="clang++"}
 
 apk_opt_wait="--wait 30"
 
@@ -2298,7 +2298,7 @@ rootbld() {
 
 	calcdeps
 	$SUDO_APK add --initdb --root "$BUILD_ROOT" --update \
-		abuild azaezel-base build-base git sbase ubase $hostdeps $builddeps \
+		abuild azaezel-base base-build coreutils util-linux $hostdeps $builddeps \
 		${USE_CCACHE:+ccache}
 
 	local bwrap_opts=""
