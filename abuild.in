@@ -27,6 +27,7 @@ fi
 : ${ADDGROUP:="abuild-addgroup"}
 : ${CC:="clang"}
 : ${CXX:="clang++"}
+: ${ROOTBLD_PKGS="abuild azaezel-base base-build coreutils util-linux"}
 
 apk_opt_wait="--wait 30"
 
@@ -2162,9 +2163,9 @@ builddeps() {
 	case "$BOOTSTRAP" in
 	no*)	BUILD_BASE="";;
 	*)	if cross_creating || cross_compiling; then
-			BUILD_BASE="build-base-$CTARGET_ARCH"
+			BUILD_BASE="base-build-$CTARGET_ARCH"
 		else
-			BUILD_BASE="build-base"
+			BUILD_BASE="base-build"
 		fi
 	esac
 	calcdeps "$BUILD_BASE"
@@ -2282,23 +2283,16 @@ rootbld() {
 	fi
 
 	[ -s "$repo_template" ] || die "rootbld: $repo_template does not exist"
-	(
-		for key in $(git config --list --name-only); do
-			k=${key#abuild.}
-			[ $k != $key ] && \
-				eval "export $k=\"$(git config --get $key)\""
-		done
+	[ "$mirror" ] || mirror=http://dl-cdn.alpinelinux.org/alpine
 
-		export mirror version
-		[ "$mirror" ] || mirror=http://dl-cdn.alpinelinux.org/alpine
-
-		envsubst
-		echo "$REPODEST/$repo"
-	) < "$repo_template" > "$BUILD_ROOT/etc/apk/repositories"
+  # todo, sed out http?
+	for i in $(cat $repo_template | tr "\n" " "); do
+			echo "$mirror/$i" >> "$BUILD_ROOT/etc/apk/repositories"
+	done
 
 	calcdeps
 	$SUDO_APK add --initdb --root "$BUILD_ROOT" --update \
-		abuild azaezel-base base-build coreutils util-linux $hostdeps $builddeps \
+		$ROOTBLD_PKGS $hostdeps $builddeps \
 		${USE_CCACHE:+ccache}
 
 	local bwrap_opts=""
